@@ -1,23 +1,46 @@
 import os
 
+from google.genai import types
+
 
 def get_files_info(working_directory, directory="."):
 
-    abs_working_dir = os.path.abspath(working_directory)
+    try:
+        pass
 
-    abs_dir = os.path.join(working_directory, directory)
-    abs_dir_path = os.path.abspath(abs_dir)
+        abs_working_dir = os.path.abspath(working_directory)
 
-    if not abs_dir_path.startswith(abs_working_dir):
-        return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
+        abs_dir = os.path.join(working_directory, directory)
+        abs_dir_path = os.path.abspath(abs_dir)
 
-    final_response = ""
+        if not abs_dir_path.startswith(abs_working_dir):
+            return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
 
-    for file in os.listdir(abs_dir_path):
-        file_path = os.path.join(abs_dir_path, file)
-        file_size = os.path.getsize(file_path)
-        is_dir = os.path.isdir(file_path)
-        response = f"- {file}: file_size={file_size} bytes, is_dir={is_dir}"
-        final_response += response + "\n"
+        final_response = ""
 
-    return final_response
+        for file in os.listdir(abs_dir_path):
+            file_path = os.path.join(abs_dir_path, file)
+            file_size = os.path.getsize(file_path)
+            is_dir = os.path.isdir(file_path)
+            response = f"- {file}: file_size={file_size} bytes, is_dir={is_dir}"
+            final_response += response + "\n"
+
+        return final_response
+
+    except Exception as e:
+        return f"Error: {e}"
+
+
+schema_get_files_info = types.FunctionDeclaration(
+    name="get_files_info",
+    description="Lists files in the specified directory along with their sizes, constrained to the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "directory": types.Schema(
+                type=types.Type.STRING,
+                description="The directory to list files from, relative to the working directory. If not provided, lists files in the working directory itself.",
+            ),
+        },
+    ),
+)
