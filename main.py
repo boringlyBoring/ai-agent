@@ -1,11 +1,17 @@
 import os
 import sys
+from subprocess import call
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from functions.call_function import MODEL_NAME, SYSTEM_PROMPT, available_functions
+from functions.call_function import (
+    MODEL_NAME,
+    SYSTEM_PROMPT,
+    available_functions,
+    call_function,
+)
 
 
 def main():
@@ -36,9 +42,11 @@ def main():
     )
 
     for function_call in response.function_calls:
-        print(f"Calling function: {function_call.name}({function_call.args})")
+        print(function_call)
+        function_response = call_function(function_call, verbose_flag)
+        print(f"-> {function_response.parts[0].function_response.response}")
 
-    print(response.text)
+    # print(response.text)
 
     if verbose_flag:
         print(f"User prompt: {prompt}")
