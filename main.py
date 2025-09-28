@@ -13,6 +13,8 @@ from functions.call_function import (
     call_function,
 )
 
+MAX_ITERATIONS = 20
+
 
 def main():
 
@@ -33,6 +35,24 @@ def main():
 
     messages = [types.Content(role="user", parts=[types.Part(text=prompt)])]
 
+    i = 0
+    while True:
+        if i > MAX_ITERATIONS:
+            print(f"Miximum itertations {MAX_ITERATIONS} reached.")
+            sys.exit(1)
+        else:
+            try:
+                response = generate_content(client, messages, verbose_flag)
+                if response:
+                    print(f"Final response: {response}")
+                    break
+            except Exception as e:
+                print(f"Error while generating respnse: {e}")
+                break
+
+
+def generate_content(client, messages, verbose_flag):
+
     config = types.GenerateContentConfig(
         tools=[available_functions], system_instruction=SYSTEM_PROMPT
     )
@@ -41,17 +61,35 @@ def main():
         model=MODEL_NAME, contents=messages, config=config
     )
 
+    if response.candidates:
+        for candidate in response.candidates:
+            function_call_content = candidate.content
+            if function_call_content:
+                messages.append(function_call_content)
+
+    if not response.function_calls:
+        return response.text
+
+    function_responses = []
+
     for function_call in response.function_calls:
-        print(function_call)
         function_response = call_function(function_call, verbose_flag)
-        print(f"-> {function_response.parts[0].function_response.response}")
+        if not function_response:
+            raise Exception(
+                f"No result after calling function {function_call.name} with args {function_call.args}"
+            )
 
-    # print(response.text)
+        if (
+            not function_response.parts
+            or not function_response.parts[0].function_response.response
+        ):
+            raise Exception("Empty function call result")
 
-    if verbose_flag:
-        print(f"User prompt: {prompt}")
-        print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-        print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+        if verbose_flag:
+            print(f"-> {function_response.parts[0].function_response.response}")
+        function_responses.append(function_response.parts[0])
+
+    messages.append(types.Content(role="tool", parts=function_responses))
 
 
 main()

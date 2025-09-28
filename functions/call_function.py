@@ -64,7 +64,8 @@ def call_function(function_call_part, verbose=False):
 
     result = function_directory[function_name](**args)
 
-    print(f"Result from function call: {result}")
+    if verbose:
+        print(f"Result from function call: {result}")
 
     return types.Content(
         role="tool",
